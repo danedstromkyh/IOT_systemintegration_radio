@@ -12,16 +12,11 @@ def radio_dict(json_dict):
     return my_list
 
 
-# def indices_conversion(dict, category):
-#     for i in range (10):
-#         dict[category][i] = dict[category].items.pop(int(f"0{i}"))
-
-
 def date_conversion(convert, json_dict2):
-    for i in range ():
-        json_date = json_dict2['schedule'][int(f"0{i}")]['starttimeutc']
+    for i in range (convert):
+        json_date = json_dict2['schedule'][i]['starttimeutc']
         json_date = datetime.datetime.utcfromtimestamp(int(json_date[6:19]) / 1000)
-        json_dict2['schedule'][int(f"0{i}")]['starttimeutc'] = json_date
+        json_dict2['schedule'][i]['starttimeutc'] = json_date
 
 
 def main():
@@ -30,7 +25,6 @@ def main():
 
     answer = response.read()
     json_dict = json.loads(answer)
-    indices_conversion(json_dict, "channels")
     channels = (radio_dict(json_dict['channels']))
 
     for i, station in enumerate(channels, start=1):
@@ -41,17 +35,16 @@ def main():
     import webbrowser
 
 
-    test = int(choose_channel) -1
-    convert = f'0{test}'
+    chosen_channel = int(choose_channel) -1 # Conversion to 00 format is completely unnecessary
 
-    radio_station_id = channels[int(convert)]['id']
+    radio_station_id = channels[chosen_channel]['id']
     # webbrowser.open_new(channels[int(convert)]["audio_url"])
     api_url_channel = f"http://api.sr.se/api/v2/scheduledepisodes?format=json&pagination=false&channelid={radio_station_id}" # 'https://api.sr.se/api/v2/scheduledepisodes/rightnow?format=json&channelid={radio_station_id}'
     response2 = urllib.request.urlopen(api_url_channel)
     answer2 = response2.read()
     json_dict2 = json.loads(answer2)
-    date_conversion(int(convert), json_dict2)
-    print(json_dict2['schedule'][int(convert)]['starttimeutc'])
+    date_conversion(len(json_dict2['schedule']), json_dict2)
+    print(json_dict2['schedule'][chosen_channel]['starttimeutc'])
     # print(json_dict2['channel']['currentscheduledepisode']['program']['name'])
     # print(json_dict2['channel']['nextscheduledepisode']['program']['name'])
 
