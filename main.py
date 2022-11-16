@@ -27,8 +27,8 @@ def url_builder(subcategories, params):
         api_url += item + "/"
     api_url += "?format=json&pagination=false"
     if params != None:
-        for key, value in params:
-            api_url += "&" + key + "=" + value
+        for key, value in params.items():
+            api_url += "&" + key + "=" + str(value)
     return api_url
 
 
@@ -52,13 +52,13 @@ def main():
     import webbrowser
 
     chosen_channel = int(choose_channel) - 1  # Conversion to 00 format is completely unnecessary
-
     radio_station_id = channels[chosen_channel]['id']
     # webbrowser.open_new(channels[int(convert)]["audio_url"])
     api_url_channel = url_builder(["scheduledepisodes"], {"channelid":radio_station_id})
-    response2 = urllib.request.urlopen(api_url_channel)
-    answer2 = response2.read()
-    json_dict2 = json.loads(answer2)
+    json_dict_channel = response_json_to_dict(api_url_channel)
+
+    print()
+
     date_conversion(len(json_dict2['schedule']), json_dict2)
     print(json_dict2['schedule'][chosen_channel]['starttimeutc'])
     # print(json_dict2['channel']['currentscheduledepisode']['program']['name'])
