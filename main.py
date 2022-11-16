@@ -6,7 +6,7 @@ def radio_dict(d):
     my_list = []
 
     for channel in d:
-        my_list.append({"id": channel['id'], "name": channel['name']})
+        my_list.append({"id": channel['id'], "name": channel['name'], "audio_url": channel['liveaudio']['url']})
 
     return my_list
 
@@ -35,6 +35,7 @@ def main():
     json_dict2 = json.loads(answer2)
 
     print(json_dict2['channel']['currentscheduledepisode']['starttimeutc'])
+    print(json_dict2['channel']['currentscheduledepisode']['program']['name'])
     print(json_dict2['channel']['currentscheduledepisode']['program']['name'])
 
 if __name__ == '__main__':
