@@ -5,23 +5,23 @@ import urllib.request
 BASE_URL = "http://api.sr.se/api/v2/"
 
 
-def radio_dict(json_dict):
-    my_list = []
+def clean_dict(json_dict):
+    cleaned_list = []
 
     for channel in json_dict:
-        my_list.append({"id": channel['id'], "name": channel['name'], "audio_url": channel['liveaudio']['url']})
+        cleaned_list.append({"id": channel['id'], "name": channel['name'], "audio_url": channel['liveaudio']['url']})
 
-    return my_list
+    return cleaned_list
 
 
-def date_conversion(convert, json_dict2):
-    for i in range(convert):
-        json_date_start = json_dict2['schedule'][i]['starttimeutc']
-        json_date_end = json_dict2['schedule'][i]['endtimeutc']
+def date_conversion(length_of_subcategory, json_dict, subcategory):
+    for i in range(length_of_subcategory):
+        json_date_start = json_dict[subcategory][i]['starttimeutc']
+        json_date_end = json_dict[subcategory][i]['endtimeutc']
         json_date_start = datetime.datetime.fromtimestamp(int(json_date_start[6:19]) / 1000)
         json_date_end = datetime.datetime.fromtimestamp(int(json_date_end[6:19]) / 1000)
-        json_dict2['schedule'][i]['starttimeutc'] = json_date_start
-        json_dict2['schedule'][i]['endtimeutc'] = json_date_end
+        json_dict[subcategory][i]['starttimeutc'] = json_date_start
+        json_dict[subcategory][i]['endtimeutc'] = json_date_end
 
 
 def url_builder(subcategories, params):
@@ -56,7 +56,7 @@ def print_schedule(json_dict_channel):
 
 
 def enumerate_dict_objects(json_dict, level_string):
-    enumeration_object = (radio_dict(json_dict[level_string]))
+    enumeration_object = (clean_dict(json_dict[level_string]))
     for i, object_of_dict in enumerate(enumeration_object, start=1):
         print(i, object_of_dict["name"])
     return enumeration_object
@@ -77,7 +77,7 @@ def main():
     api_url_channel = url_builder(["scheduledepisodes"], {"channelid": radio_station_id})
     json_dict_channel = response_json_to_dict(api_url_channel)
 
-    date_conversion(len(json_dict_channel['schedule']), json_dict_channel)
+    date_conversion(len(json_dict_channel['schedule']), json_dict_channel, "schedule")
     program_info = print_schedule(json_dict_channel)
     reply = input(f"Vill du spela upp {program_info[0]['title']}? Svara med Y eller N.")
     reply = reply.lower()
