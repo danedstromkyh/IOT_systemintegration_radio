@@ -24,6 +24,7 @@ def date_conversion(length_of_subcategory, json_dict, subcategory):
         json_dict[subcategory][i]['endtimeutc'] = json_date_end
 
 
+# Takes params and subcategories of the API call allowing us to build an url specific to our current needs.
 def url_builder(subcategories, params):
     api_url = BASE_URL
     for item in subcategories:
@@ -35,6 +36,7 @@ def url_builder(subcategories, params):
     return api_url
 
 
+# Consumes an API resource at the input url, returning a dict of the json response.
 def response_json_to_dict(api_url):
     response = urllib.request.urlopen(api_url)
     answer = response.read()
@@ -42,17 +44,29 @@ def response_json_to_dict(api_url):
     return json_dict
 
 
-def print_schedule(json_dict_channel):
+# Loops through the schedule of a specific channel and returns program info of the upcoming (input) number of programs
+def print_schedule_return_program_info(json_dict_channel, subcategory, number_of_episodes_to_be_printed):
     counter = 0
     program_info = []
-    for program in json_dict_channel["schedule"]:
-        if counter > 4:
+    for program_object in json_dict_channel[subcategory]:
+        if counter > number_of_episodes_to_be_printed:
             return program_info
-        if program["endtimeutc"] >= datetime.datetime.now():
-            if counter == 0:
-                program_info.append({"title": program['title'], "program_id": program['program']['id'], "episode_id": program['episodeid']})
-            counter+=1
-            print(f"{program['title']}: börjar sändas: {program['starttimeutc'].strftime('%H:%M:%S')}, slutar: {program['endtimeutc'].strftime('%H:%M:%S')}.")
+        if program_object["endtimeutc"] >= datetime.datetime.now():
+            if counter < number_of_episodes_to_be_printed:
+                try:
+                    program_info.append(
+                        {"title": program_object['title'], "subtitle": program_object['subtitle'], "program_id": program_object['program']['id'], "episode_id":
+                            program_object['episodeid']})
+                except KeyError:
+                    program_info.append(
+                        {"title": program_object['title'], "program_id": program_object['program']['id']})
+            counter += 1
+            try:
+                print(
+                    f"{program_object['starttimeutc'].strftime('%H:%M:%S')} - {program_object['endtimeutc'].strftime('%H:%M:%S')}  {program_object['title']} {program_object['subtitle']}")
+            except KeyError:
+                print(
+                    f"{program_object['starttimeutc'].strftime('%H:%M:%S')} - {program_object['endtimeutc'].strftime('%H:%M:%S')}  {program_object['title']}")
 
 
 def enumerate_dict_objects(json_dict, level_string):
@@ -60,6 +74,17 @@ def enumerate_dict_objects(json_dict, level_string):
     for i, object_of_dict in enumerate(enumeration_object, start=1):
         print(i, object_of_dict["name"])
     return enumeration_object
+
+
+def menu(dict_scope):
+    # Print currents scope actions
+    # Take user input
+    # return current scope
+    pass
+
+
+def helper_function():
+    pass
 
 
 def main():
@@ -73,25 +98,24 @@ def main():
 
     chosen_channel = int(choose_channel) - 1  # Conversion to 00 format is completely unnecessary
     radio_station_id = channels[chosen_channel]['id']
-    # webbrowser.open_new(channels[int(convert)]["audio_url"])
     api_url_channel = url_builder(["scheduledepisodes"], {"channelid": radio_station_id})
     json_dict_channel = response_json_to_dict(api_url_channel)
 
     date_conversion(len(json_dict_channel['schedule']), json_dict_channel, "schedule")
-    program_info = print_schedule(json_dict_channel)
+    program_info = print_schedule_return_program_info(json_dict_channel, "schedule", 5)
+
     reply = input(f"Vill du spela upp {program_info[0]['title']}? Svara med Y eller N.")
     reply = reply.lower()
     if reply == "y":
         webbrowser.open_new(channels[chosen_channel]["audio_url"])
     reply = input(f"Vill du veta mer om {program_info[0]['title']}? Svara med Y eller N.")
     if reply == "y":
-        episode_info_url = url_builder(["episodes", "get"], {"id": program_info[0]["episode_id"]})
-        episode_info = response_json_to_dict(episode_info_url)
-        print(episode_info["episode"]["title"])
-
-    print()
-    # print(json_dict2['channel']['currentscheduledepisode']['program']['name'])
-    # print(json_dict2['channel']['nextscheduledepisode']['program']['name'])
+        try:
+            episode_info_url = url_builder(["episodes", "get"], {"id": program_info[0]["episode_id"]})
+            episode_info = response_json_to_dict(episode_info_url)
+            print(episode_info["episode"]["title"])
+        except KeyError:
+            print("Ingen information om programmet tillgängligt")
 
 
 if __name__ == '__main__':
