@@ -4,7 +4,6 @@ import urllib.request
 import webbrowser
 
 BASE_URL = "http://api.sr.se/api/v2/"
-looping = True
 
 
 def clean_dict(json_dict):
@@ -94,28 +93,23 @@ def match_number(input, dict, dict2):
         case "play":
             import webbrowser
             webbrowser.open_new(dict2[dict[1]-1]["audio_url"])
-        case "exit"|"quit":
-            global looping
-            looping = False
         case _:
             pass
+
+
 def main():
-    global looping
-    while looping:
-        api_url = url_builder(["channels"], None)
-        json_dict = response_json_to_dict(api_url)
-        channels = enumerate_dict_objects(json_dict, "channels")
-        chosen_program_info = match_number(int(input('Choose a channel: ').lower()), channels, None)
-        print()
+    api_url = url_builder(["channels"], None)
+    json_dict = response_json_to_dict(api_url)
+    channels = enumerate_dict_objects(json_dict, "channels")
+    chosen_program_info = match_number(int(input('Choose a channel: ').lower()), channels, None)
 
-        try:
-            response_dict = match_number(input(f"Vill du spela upp {chosen_program_info[0][0]['title']}? Svara med: play eller n "),
-                                     chosen_program_info, channels)
-            response_dict2 = match_number(input(f"Vill du veta mer om {chosen_program_info[0][0]['title']}? Svara med: info eller n "), chosen_program_info[0], None)
-        except IndexError:
-            print("Inga tillgängliga program")
-            input("Tryck på valfri tangent...")
-
+    try:
+        response_dict = match_number(input(f"Vill du spela upp {chosen_program_info[0][0]['title']}? Svara med: play eller n "),
+                                 chosen_program_info, channels)
+        response_dict2 = match_number(input(f"Vill du veta mer om {chosen_program_info[0][0]['title']}? Svara med: info eller n "), chosen_program_info[0], None)
+    except IndexError:
+        print("Inga tillgängliga program")
+        input("Tryck på valfri tangent...")
 
 
 if __name__ == '__main__':
