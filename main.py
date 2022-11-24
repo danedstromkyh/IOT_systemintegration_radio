@@ -1,8 +1,10 @@
 import datetime
 import json
 import urllib.request
+import webbrowser
 
 BASE_URL = "http://api.sr.se/api/v2/"
+looping = True
 
 
 def clean_dict(json_dict):
@@ -10,7 +12,7 @@ def clean_dict(json_dict):
 
     for channel in json_dict:
         cleaned_list.append({"id": channel['id'], "name": channel['name'], "audio_url": channel['liveaudio']['url']})
-
+    print()
     return cleaned_list
 
 
@@ -45,7 +47,7 @@ def response_json_to_dict(api_url):
 
 
 # Loops through the schedule of a specific channel and returns program info of the upcoming (input) number of programs
-def print_schedule_return_program_info(json_dict_channel, subcategory, number_of_episodes_to_be_printed):
+def print_schedule(json_dict_channel, subcategory, number_of_episodes_to_be_printed):
     counter = 0
     program_info = []
     for program_object in json_dict_channel[subcategory]:
@@ -55,8 +57,7 @@ def print_schedule_return_program_info(json_dict_channel, subcategory, number_of
             if counter < number_of_episodes_to_be_printed:
                 try:
                     program_info.append(
-                        {"title": program_object['title'], "subtitle": program_object['subtitle'], "program_id": program_object['program']['id'], "episode_id":
-                            program_object['episodeid']})
+                        {"title": program_object['title'], "program_id": program_object['program']['id'], "episode_id": program_object['episodeid']})
                 except KeyError:
                     program_info.append(
                         {"title": program_object['title'], "program_id": program_object['program']['id']})
@@ -67,6 +68,7 @@ def print_schedule_return_program_info(json_dict_channel, subcategory, number_of
             except KeyError:
                 print(
                     f"{program_object['starttimeutc'].strftime('%H:%M:%S')} - {program_object['endtimeutc'].strftime('%H:%M:%S')}  {program_object['title']}")
+    return program_info
 
 
 def enumerate_dict_objects(json_dict, level_string):
@@ -76,46 +78,44 @@ def enumerate_dict_objects(json_dict, level_string):
     return enumeration_object
 
 
-def menu(dict_scope):
-    # Print currents scope actions
-    # Take user input
-    # return current scope
-    pass
-
-
-def helper_function():
-    pass
-
-
-def main():
-    api_url = url_builder(["channels"], None)
-    json_dict = response_json_to_dict(api_url)
-    channels = enumerate_dict_objects(json_dict, "channels")
-
-    choose_channel = input('Choose a channel: ')
-
-    import webbrowser
-
-    chosen_channel = int(choose_channel) - 1  # Conversion to 00 format is completely unnecessary
-    radio_station_id = channels[chosen_channel]['id']
-    api_url_channel = url_builder(["scheduledepisodes"], {"channelid": radio_station_id})
-    json_dict_channel = response_json_to_dict(api_url_channel)
-
-    date_conversion(len(json_dict_channel['schedule']), json_dict_channel, "schedule")
-    program_info = print_schedule_return_program_info(json_dict_channel, "schedule", 5)
-
-    reply = input(f"Vill du spela upp {program_info[0]['title']}? Svara med Y eller N.")
-    reply = reply.lower()
-    if reply == "y":
-        webbrowser.open_new(channels[chosen_channel]["audio_url"])
-    reply = input(f"Vill du veta mer om {program_info[0]['title']}? Svara med Y eller N.")
-    if reply == "y":
-        try:
-            episode_info_url = url_builder(["episodes", "get"], {"id": program_info[0]["episode_id"]})
+def match_number(input, dict, dict2):
+    match input:
+        case int() as number:
+            radio_station_id = dict[number - 1]['id']
+            api_url_channel = url_builder(["scheduledepisodes"], {"channelid": radio_station_id})
+            json_dict_channel = response_json_to_dict(api_url_channel)
+            date_conversion(len(json_dict_channel['schedule']), json_dict_channel, "schedule")
+            program_info = print_schedule(json_dict_channel, "schedule", 4)
+            return program_info, number
+        case "info":
+            episode_info_url = url_builder(["episodes", "get"], {"id": dict[0]["episode_id"]})
             episode_info = response_json_to_dict(episode_info_url)
             print(episode_info["episode"]["title"])
-        except KeyError:
-            print("Ingen information om programmet tillgängligt")
+        case "play":
+            import webbrowser
+            webbrowser.open_new(dict2[dict[1]-1]["audio_url"])
+        case "exit"|"quit":
+            global looping
+            looping = False
+        case _:
+            pass
+def main():
+    global looping
+    while looping:
+        api_url = url_builder(["channels"], None)
+        json_dict = response_json_to_dict(api_url)
+        channels = enumerate_dict_objects(json_dict, "channels")
+        chosen_program_info = match_number(int(input('Choose a channel: ').lower()), channels, None)
+        print()
+
+        try:
+            response_dict = match_number(input(f"Vill du spela upp {chosen_program_info[0][0]['title']}? Svara med: play eller n "),
+                                     chosen_program_info, channels)
+            response_dict2 = match_number(input(f"Vill du veta mer om {chosen_program_info[0][0]['title']}? Svara med: info eller n "), chosen_program_info[0], None)
+        except IndexError:
+            print("Inga tillgängliga program")
+            input("Tryck på valfri tangent...")
+
 
 
 if __name__ == '__main__':
