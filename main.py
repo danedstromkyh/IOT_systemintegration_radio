@@ -1,7 +1,6 @@
 import datetime
 import json
 import urllib.request
-import webbrowser
 
 BASE_URL = "http://api.sr.se/api/v2/"
 
@@ -90,6 +89,7 @@ def match_number(input, dict, dict2):
             episode_info_url = url_builder(["episodes", "get"], {"id": dict[0]["episode_id"]})
             episode_info = response_json_to_dict(episode_info_url)
             print(episode_info["episode"]["title"])
+            print(episode_info["episode"]["description"])
         case "play":
             import webbrowser
             webbrowser.open_new(dict2[dict[1]-1]["audio_url"])
@@ -98,18 +98,26 @@ def match_number(input, dict, dict2):
 
 
 def main():
-    api_url = url_builder(["channels"], None)
-    json_dict = response_json_to_dict(api_url)
-    channels = enumerate_dict_objects(json_dict, "channels")
-    chosen_program_info = match_number(int(input('Choose a channel: ').lower()), channels, None)
+    while True:
+        api_url = url_builder(["channels"], None)
+        json_dict = response_json_to_dict(api_url)
+        channels = enumerate_dict_objects(json_dict, "channels")
 
-    try:
-        response_dict = match_number(input(f"Vill du spela upp {chosen_program_info[0][0]['title']}? Svara med: play eller n "),
-                                 chosen_program_info, channels)
-        response_dict2 = match_number(input(f"Vill du veta mer om {chosen_program_info[0][0]['title']}? Svara med: info eller n "), chosen_program_info[0], None)
-    except IndexError:
-        print("Inga tillgängliga program")
-        input("Tryck på valfri tangent...")
+        while True:
+            try:
+                chosen_program_info = match_number(int(input('Välj en radiokanal: ').lower()), channels, None)
+                break
+            except:
+                print("Ange en siffra")
+
+        try:
+            match_number(input(f"Vill du spela upp {chosen_program_info[0][0]['title']}? Svara med: play eller n "),
+                                     chosen_program_info, channels)
+            match_number(input(f"Vill du veta mer om {chosen_program_info[0][0]['title']}? Svara med: info eller n "), chosen_program_info[0], None)
+            input("Tryck på valfri tangent för att lista radiokanalerna igen")
+        except IndexError:
+            print("Inga tillgängliga program")
+            input("Tryck på valfri tangent...")
 
 
 if __name__ == '__main__':
